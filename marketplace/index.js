@@ -41,14 +41,21 @@ app.post("/auth/signin", (req, res) => {
         // если нет, то 400
 
         if (!username || !password) {
-            return res.status(400).json({error: "Missing data"})
+            return res.status(400).json({ error: "Missing data" })
         }
 
-        const user = undefined // найти пользователя из бд
+        const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username) // найти пользователя из бд
+        if (!user) return res.status(401).json({ error: "Неправильный пароль" })
         // Вернуть 401 если юзера нет
 
-        const valid = undefined // проверить через 
+        const valid = bcr.compareSync(password, user.password) // проверить через 
         // функцию bcr.compareSync
+        if (!valid) return res.status(401).json({ error: "Неправильный пароль" })
+
+        const { password: _, ...safeUser } = user
+
+        const token = jwt.sign({ ...safeUser }, SECRET, { expiresIn: "24h" })
+        res.status(201).json({ success: true, token, user: safeUser })
     } catch (error) {
         console.error(error)
         return res.status(500).json({ error: "Something went wrong" })
@@ -147,6 +154,18 @@ app.post("/api/items", auth, (req, res) => {
     } catch (err) {
         console.error(err)
         return res.status(500).json({ error: "Failed to create" })
+    }
+})
+
+app.delete("/api/items/:id", auth, (req, res) => {
+    try {
+        const { id } = req.params
+
+        const item = db.prepare("SELECT * FROM items WHERE id = ?").get(id)
+        if (!item) return res.status(404).json({ error: "Товар не найден" })
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ error: "Something went wrong" })
     }
 })
 
