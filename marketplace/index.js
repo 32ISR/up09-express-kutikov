@@ -152,12 +152,32 @@ app.post("/api/items", auth, (req, res) => {
     }
 })
 
-app.delete("/api/items/:id", (req, res) => {
+app.delete("/api/items/:id", auth, (req, res) => {
     try {
-        const {id} = req.params
-        // если id нет 401 и ошибка о том, что нет id
-    } catch (error) {
+        const { id } = req.params
+        if (!id) return res
+            .status(401)
+            .json({ error: "Missing ID" })
 
+        const item = db
+            .prepare("SELECT * FROM items WHERE id = ?")
+            .get(id)
+
+        if (!item) res.status(404).json({ error: "Missing item" })
+
+        if (!(item.userId === req.user.id))
+            return res
+                .status(403)
+                .json({ error: "Can't delete other users' post" })
+
+        const info = db
+            .prepare("DELETE FROM items WHERE id = ?")
+            .run(id)
+
+        return res.status(200).json({message: "Deleted"})
+    } catch (error) {
+        console.error(error)
+        res.status(500).json({ error: "Something went wrong" })
     }
 })
 
