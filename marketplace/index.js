@@ -14,17 +14,17 @@ const PORT = 3000
 
 const auth = (req, res, next) => {
     const authHeader = req.headers.authorization
-    if (!authHeader) return res.status(401).json({error: "No token provided"})
+    if (!authHeader) return res.status(401).json({ error: "No token provided" })
 
     const token = authHeader.split(" ")[1] // ["Bearer", "eyDCjsakdj"]
-    if (!token) return res.status(401).json({error: "Invalid token form"})
+    if (!token) return res.status(401).json({ error: "Invalid token form" })
 
     try {
         const decoded = jwt.verify(token, SECRET)
         req.user = decoded
         next()
     } catch (error) {
-        return res.status(403).json({error: "Invalid or expired token"})
+        return res.status(403).json({ error: "Invalid or expired token" })
     }
 }
 
@@ -33,8 +33,31 @@ app.get("/", (req, res) => {
 })
 
 app.post("/auth/signin", (req, res) => {
+    try {
+        const { username, password } = req.body
+        // проверьте наличие этих переменный
+        // если нет, верните 400 с ошибкой
 
+        if (!username || !password) return res.status(400).json({ error: "Missing data" })
+
+        const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username)
+
+        if (!user) return res.status(401).json({ error: "Wrong password" })
+
+        const valid = bcr.compareSync(password, user.password)
+
+        // если valid - false 401 и неправильный пароль
+        if (!valid) return res.status(401).json({ error: "Wrong password" })
+
+        const { password: _, safeUser } = user
+        const token = jwt.sign(safeUser, SECRET, { expiresIn: "24h" })
+        res.status(200).json({ success: true, token, user: safeUser })
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ error: "Something went wrong" })
+    }
 })
+
 app.post("/auth/signup", (req, res) => {
     try {
         const { username, password, email } = req.body
@@ -130,3 +153,35 @@ app.post("/api/items", auth, (req, res) => {
 })
 
 app.listen(PORT)
+
+
+
+
+
+
+
+
+
+// const a = [1, 2, 3]
+// const b = a
+// b.push(4)
+// console.log(a)
+
+
+// let a = 1
+// let b = 1
+// b = b + 1
+// console.log(a)
+
+// const a = [1, 2, 3]
+// const b = [1, 2, 3]
+// console.log(a === b)
+
+
+// const user = {
+//     username: "ktkv",
+//     age: 25,
+//     hobbies: ["coding"]
+// }
+
+// const { username, ...newUser } = user
