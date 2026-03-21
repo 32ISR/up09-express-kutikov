@@ -152,6 +152,15 @@ app.post("/api/items", auth, (req, res) => {
     }
 })
 
+app.delete("/api/items/:id", (req, res) => {
+    try {
+        const {id} = req.params
+        // если id нет 401 и ошибка о том, что нет id
+    } catch (error) {
+
+    }
+})
+
 app.listen(PORT)
 
 
@@ -185,3 +194,7 @@ app.listen(PORT)
 // }
 
 // const { username, ...newUser } = user
+
+// https://kitek.ktkv.dev - 12.32.123 
+// https://ktkv.dev - 91.114.23.31
+// https://kitek.ktkv.dev/feedback/api/items/1235432?username=ktkv&password=dsa
